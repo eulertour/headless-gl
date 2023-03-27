@@ -1,6 +1,8 @@
 #ifndef WEBGL_H_
 #define WEBGL_H_
 
+#define EGL_EXT_PROTOTYPES
+
 #include <algorithm>
 #include <vector>
 #include <map>
@@ -11,6 +13,7 @@
 #include <v8.h>
 
 #include <EGL/egl.h>
+#include <EGL/eglext.h>
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
 

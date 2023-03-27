@@ -28,6 +28,29 @@ const char* REQUIRED_EXTENSIONS[] = {
     return Nan::ThrowError("Invalid GL context"); \
   }
 
+EGLDisplay getDisplayHeadless() {
+  static const int MAX_DEVICES = 4;
+  EGLDeviceEXT eglDevs[MAX_DEVICES];
+  EGLint numDevices;
+
+  PFNEGLQUERYDEVICESEXTPROC eglQueryDevicesEXT =
+    (PFNEGLQUERYDEVICESEXTPROC)
+    eglGetProcAddress("eglQueryDevicesEXT");
+
+  if (eglQueryDevicesEXT == NULL) {
+    printf("%s\n", "eglGetProcAddress('eglQueryDevicesEXT') returned NULL");
+  }
+
+  eglQueryDevicesEXT(MAX_DEVICES, eglDevs, &numDevices);
+
+  PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT =
+    (PFNEGLGETPLATFORMDISPLAYEXTPROC)
+    eglGetProcAddress("eglGetPlatformDisplayEXT");
+
+  return eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT,
+                                    eglDevs[0], 0);
+}
+
 WebGLRenderingContext::WebGLRenderingContext(
     int width
   , int height
@@ -50,7 +73,7 @@ WebGLRenderingContext::WebGLRenderingContext(
 
   //Get display
   if (!HAS_DISPLAY) {
-    DISPLAY = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+    DISPLAY = getDisplayHeadless();
     if (DISPLAY == EGL_NO_DISPLAY) {
       state = GLCONTEXT_STATE_ERROR;
       return;
@@ -125,17 +148,21 @@ WebGLRenderingContext::WebGLRenderingContext(
   //Initialize function pointers
   initPointers();
 
+  printf("%s\n", glGetString(GL_VENDOR));
+  printf("%s\n", glGetString(GL_RENDERER));
+
   //Check extensions
   const char *extensionString = (const char*)((glGetString)(GL_EXTENSIONS));
 
-  //Load required extensions
-  for(const char** rext = REQUIRED_EXTENSIONS; *rext; ++rext) {
-    if(!strstr(extensionString, *rext)) {
-      dispose();
-      state = GLCONTEXT_STATE_ERROR;
-      return;
-    }
-  }
+  // //Load required extensions
+  // for(const char** rext = REQUIRED_EXTENSIONS; *rext; ++rext) {
+  //   if(!strstr(extensionString, *rext)) {
+  //     printf("%s\n", "Missing required extension");
+  //     dispose();
+  //     state = GLCONTEXT_STATE_ERROR;
+  //     return;
+  //   }
+  // }
 
   //Select best preferred depth
   preferredDepth = GL_DEPTH_COMPONENT16;
